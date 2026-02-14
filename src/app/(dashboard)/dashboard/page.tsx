@@ -13,16 +13,22 @@ export default async function DashboardPage() {
     .eq("id", user!.id)
     .single();
 
-  // Fetch AI usage count this month
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
-
-  const { count: aiCount } = await supabase
-    .from("ai_usage")
+  // Fetch total reviews count
+  const { count: reviewsCount } = await supabase
+    .from("reviews")
     .select("*", { count: "exact", head: true })
-    .eq("user_id", user!.id)
-    .gte("created_at", startOfMonth.toISOString());
+    .eq("user_id", user!.id);
+
+  // Fetch average rating
+  const { data: ratingData } = await supabase
+    .from("reviews")
+    .select("rating")
+    .eq("user_id", user!.id);
+
+  const avgRating =
+    ratingData && ratingData.length > 0
+      ? ratingData.reduce((sum, r) => sum + r.rating, 0) / ratingData.length
+      : 0;
 
   const plan = pricingPlans.find((p) => p.id === profile?.subscription_plan) || pricingPlans[0];
 
@@ -35,13 +41,13 @@ export default async function DashboardPage() {
         </p>
       </div>
       <StatsCards
-        aiGenerations={aiCount ?? 0}
+        totalReviews={reviewsCount ?? 0}
+        averageRating={avgRating}
         planName={plan.name}
-        planPrice={plan.price.monthly}
         status={profile?.subscription_status ?? "free"}
       />
       <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-        Your app content goes here. Replace this with your product features.
+        Your reviews and reputation dashboard will appear here.
       </div>
     </div>
   );

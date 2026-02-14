@@ -1,25 +1,31 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageSquare, CreditCard, Zap, Users } from "lucide-react";
+import { Star, MessageSquare, CreditCard, Zap } from "lucide-react";
 
 interface StatsCardsProps {
-  aiGenerations: number;
+  totalReviews: number;
+  averageRating: number;
   planName: string;
-  planPrice: number;
   status: string;
 }
 
-export function StatsCards({ aiGenerations, planName, planPrice, status }: StatsCardsProps) {
+export function StatsCards({ totalReviews, averageRating, planName, status }: StatsCardsProps) {
   const stats = [
     {
-      title: "AI Generations",
-      value: aiGenerations.toLocaleString(),
-      description: "This month",
+      title: "Total Reviews",
+      value: totalReviews.toLocaleString(),
+      description: "Across all locations",
       icon: MessageSquare,
+    },
+    {
+      title: "Average Rating",
+      value: averageRating > 0 ? averageRating.toFixed(1) : "--",
+      description: averageRating > 0 ? `Based on ${totalReviews} reviews` : "No reviews yet",
+      icon: Star,
     },
     {
       title: "Current Plan",
       value: planName,
-      description: planPrice > 0 ? `$${planPrice}/month` : "Free tier",
+      description: status === "active" ? "Subscription active" : "Free tier",
       icon: CreditCard,
     },
     {
@@ -27,12 +33,6 @@ export function StatsCards({ aiGenerations, planName, planPrice, status }: Stats
       value: status === "active" ? "Active" : "Free",
       description: status === "active" ? "Subscription active" : "No active subscription",
       icon: Zap,
-    },
-    {
-      title: "API Calls",
-      value: "—",
-      description: "Coming soon",
-      icon: Users,
     },
   ];
 
