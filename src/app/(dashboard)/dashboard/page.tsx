@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { StatsCards } from "@/components/dashboard/stats-cards";
-import { pricingPlans } from "@/lib/stripe/plans";
+import { getUserPlan } from "@/lib/stripe/plans";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -30,7 +30,7 @@ export default async function DashboardPage() {
       ? ratingData.reduce((sum, r) => sum + r.rating, 0) / ratingData.length
       : 0;
 
-  const plan = pricingPlans.find((p) => p.id === profile?.subscription_plan) || pricingPlans[0];
+  const plan = getUserPlan(profile?.subscription_plan ?? null);
 
   return (
     <div className="space-y-8">
