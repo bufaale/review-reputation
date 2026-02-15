@@ -63,11 +63,20 @@ export async function POST(req: Request) {
   if (!parsed.success)
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  // AI sentiment analysis
-  const sentiment = await analyzeSentiment(
-    parsed.data.review_text,
-    parsed.data.rating,
-  );
+  // AI sentiment analysis (graceful fallback if AI unavailable)
+  let sentiment: { sentiment: string; score: number; tags: string[] } = {
+    sentiment: parsed.data.rating >= 4 ? "positive" : parsed.data.rating <= 2 ? "negative" : "neutral",
+    score: 0.5,
+    tags: [],
+  };
+  try {
+    sentiment = await analyzeSentiment(
+      parsed.data.review_text,
+      parsed.data.rating,
+    );
+  } catch {
+    // Use rating-based fallback
+  }
 
   const { data, error } = await supabase
     .from("reviews")
