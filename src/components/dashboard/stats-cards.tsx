@@ -1,38 +1,49 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Star, MessageSquare, CreditCard, Zap } from "lucide-react";
+import { Star, MessageSquareText, CheckCircle, Clock } from "lucide-react";
 
 interface StatsCardsProps {
   totalReviews: number;
   averageRating: number;
-  planName: string;
-  status: string;
+  responseRate: number;
+  pendingResponses: number;
 }
 
-export function StatsCards({ totalReviews, averageRating, planName, status }: StatsCardsProps) {
+export function StatsCards({ totalReviews, averageRating, responseRate, pendingResponses }: StatsCardsProps) {
   const stats = [
     {
       title: "Total Reviews",
       value: totalReviews.toLocaleString(),
       description: "Across all locations",
-      icon: MessageSquare,
+      icon: MessageSquareText,
     },
     {
       title: "Average Rating",
       value: averageRating > 0 ? averageRating.toFixed(1) : "--",
-      description: averageRating > 0 ? `Based on ${totalReviews} reviews` : "No reviews yet",
+      description: averageRating > 0 ? `${averageRating >= 4 ? "Great" : averageRating >= 3 ? "Good" : "Needs improvement"}` : "No reviews yet",
       icon: Star,
+      extra:
+        averageRating > 0 ? (
+          <span className="ml-1 inline-flex gap-0.5">
+            {Array.from({ length: 5 }, (_, i) => (
+              <Star
+                key={i}
+                className={`h-3 w-3 ${i < Math.round(averageRating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"}`}
+              />
+            ))}
+          </span>
+        ) : null,
     },
     {
-      title: "Current Plan",
-      value: planName,
-      description: status === "active" ? "Subscription active" : "Free tier",
-      icon: CreditCard,
+      title: "Response Rate",
+      value: `${Math.round(responseRate * 100)}%`,
+      description: "Reviews with responses",
+      icon: CheckCircle,
     },
     {
-      title: "Status",
-      value: status === "active" ? "Active" : "Free",
-      description: status === "active" ? "Subscription active" : "No active subscription",
-      icon: Zap,
+      title: "Pending Responses",
+      value: pendingResponses.toLocaleString(),
+      description: pendingResponses > 0 ? "Reviews need responses" : "All caught up!",
+      icon: Clock,
     },
   ];
 
@@ -45,7 +56,10 @@ export function StatsCards({ totalReviews, averageRating, planName, status }: St
             <stat.icon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stat.value}</div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold">{stat.value}</span>
+              {"extra" in stat && stat.extra}
+            </div>
             <p className="text-xs text-muted-foreground">{stat.description}</p>
           </CardContent>
         </Card>
