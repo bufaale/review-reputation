@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { Location, ReviewWithResponse } from "@/types/database";
+import { CsvImport } from "@/components/reviews/csv-import";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -410,6 +411,7 @@ export default function LocationDetailPage() {
         <TabsList>
           <TabsTrigger value="reviews">Reviews</TabsTrigger>
           <TabsTrigger value="add-review">Add Review</TabsTrigger>
+          <TabsTrigger value="import-csv">Import CSV</TabsTrigger>
         </TabsList>
 
         <TabsContent value="reviews" className="mt-4 space-y-4">
@@ -591,6 +593,16 @@ export default function LocationDetailPage() {
               </form>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="import-csv" className="mt-4">
+          <CsvImport
+            locationId={id}
+            onImportComplete={async () => {
+              await fetchReviews();
+              setActiveTab("reviews");
+            }}
+          />
         </TabsContent>
       </Tabs>
     </div>
