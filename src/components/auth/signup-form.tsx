@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,6 +21,7 @@ export function SignupForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [acceptedTos, setAcceptedTos] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -133,7 +135,24 @@ export function SignupForm() {
                   minLength={6}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="tos"
+                  checked={acceptedTos}
+                  onCheckedChange={(checked) => setAcceptedTos(checked === true)}
+                />
+                <Label htmlFor="tos" className="text-sm font-normal leading-snug">
+                  I agree to the{" "}
+                  <Link href="/terms" className="text-primary hover:underline" target="_blank">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/privacy" className="text-primary hover:underline" target="_blank">
+                    Privacy Policy
+                  </Link>
+                </Label>
+              </div>
+              <Button type="submit" className="w-full" disabled={!acceptedTos || loading}>
                 {loading ? "Creating account..." : "Sign up"}
               </Button>
             </form>
