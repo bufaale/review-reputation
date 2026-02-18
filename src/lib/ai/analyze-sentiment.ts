@@ -1,6 +1,7 @@
 import { generateObject } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
+import { sanitizeUserInput } from "@/lib/security/ai-safety";
 
 const sentimentSchema = z.object({
   sentiment: z.enum(["positive", "neutral", "negative"]),
@@ -23,7 +24,14 @@ export async function analyzeSentiment(
     schema: sentimentSchema,
     system:
       "You are a sentiment analysis expert. Analyze the review and extract sentiment, confidence, and topic tags. Use the rating as additional context but base sentiment primarily on the text content.",
-    prompt: `Rating: ${rating}/5\nReview: "${reviewText}"`,
+    prompt: `Rating: ${rating}/5
+
+<review_data>
+${sanitizeUserInput(reviewText)}
+</review_data>
+
+Analyze the review above based on the rating and text content.`,
+    maxOutputTokens: 500,
   });
 
   return object;

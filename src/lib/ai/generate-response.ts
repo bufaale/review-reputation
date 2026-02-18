@@ -1,6 +1,7 @@
 import { generateObject } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
+import { sanitizeUserInput } from "@/lib/security/ai-safety";
 
 const responseSchema = z.object({
   content: z
@@ -28,11 +29,13 @@ For neutral reviews (3 stars): thank them, acknowledge feedback, mention improve
 For positive reviews (4-5 stars): express genuine gratitude, be warm, invite them back.
 Keep responses 2-4 sentences. Never be defensive or dismissive.`;
 
-  const userPrompt = `Write a review response for ${businessName}${industry ? ` (${industry})` : ""}.
+  const userPrompt = `Write a review response for ${sanitizeUserInput(businessName)}${industry ? ` (${sanitizeUserInput(industry)})` : ""}.
 
-Review by: ${reviewerName || "a customer"}
+<review_data>
+Review by: ${sanitizeUserInput(reviewerName || "a customer")}
 Rating: ${rating}/5 stars
-Review: "${reviewText}"
+Review: "${sanitizeUserInput(reviewText)}"
+</review_data>
 
 Tone: ${tone}`;
 
@@ -41,6 +44,7 @@ Tone: ${tone}`;
     schema: responseSchema,
     system: systemPrompt,
     prompt: userPrompt,
+    maxOutputTokens: 500,
   });
 
   return object.content;
