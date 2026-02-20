@@ -5,6 +5,7 @@ import {
   MapPin,
   Mail,
   FileSpreadsheet,
+  Sparkles,
 } from "lucide-react";
 import {
   Card,
@@ -13,13 +14,15 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const features = [
   {
-    icon: MessageSquareText,
-    title: "AI Response Generation",
+    icon: Sparkles,
+    title: "Multi-Tone AI Responses",
     description:
-      "Generate professional responses to any review in seconds. AI matches your brand's tone.",
+      "Generate 3 response options in professional, friendly, and casual tones — pick the perfect one for every review.",
+    highlighted: true,
   },
   {
     icon: BarChart3,
@@ -70,13 +73,36 @@ export function Features() {
           {features.map((feature) => (
             <Card
               key={feature.title}
-              className="transition-shadow hover:shadow-md"
+              className={
+                feature.highlighted
+                  ? "relative overflow-hidden border-violet-500/50 bg-linear-to-br from-violet-500/10 to-purple-500/10 shadow-lg transition-shadow hover:shadow-xl"
+                  : "transition-shadow hover:shadow-md"
+              }
             >
               <CardHeader>
-                <div className="bg-primary/10 mb-2 flex h-10 w-10 items-center justify-center rounded-lg">
-                  <feature.icon className="text-primary h-5 w-5" />
+                <div
+                  className={
+                    feature.highlighted
+                      ? "mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/20"
+                      : "bg-primary/10 mb-2 flex h-10 w-10 items-center justify-center rounded-lg"
+                  }
+                >
+                  <feature.icon
+                    className={
+                      feature.highlighted
+                        ? "h-5 w-5 text-violet-600 dark:text-violet-400"
+                        : "text-primary h-5 w-5"
+                    }
+                  />
                 </div>
-                <CardTitle>{feature.title}</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle>{feature.title}</CardTitle>
+                  {feature.highlighted && (
+                    <Badge className="bg-violet-600 text-white text-[10px] px-1.5 py-0">
+                      NEW
+                    </Badge>
+                  )}
+                </div>
                 <CardDescription>{feature.description}</CardDescription>
               </CardHeader>
               <CardContent />

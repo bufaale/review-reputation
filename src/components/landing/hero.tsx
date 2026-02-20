@@ -7,23 +7,23 @@ export function Hero() {
     <section className="relative overflow-hidden py-24 sm:py-32">
       <div className="mx-auto max-w-4xl px-6 text-center">
         <Badge variant="secondary" className="mb-4">
-          Manage your online reputation with AI
+          AI review responses for $19/mo — Birdeye charges $299
         </Badge>
         <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
-          AI-Powered Review Responses in{" "}
-          <span className="text-primary">Seconds</span>
+          AI-Powered Review Responses for{" "}
+          <span className="text-primary">$19/mo, Not $299</span>
         </h1>
         <p className="mt-6 text-lg leading-8 text-muted-foreground">
-          Stop spending hours crafting review responses. ReviewPulse uses AI to
-          generate professional, on-brand replies to every customer review. Track
-          your reputation and grow your reviews.
+          Generate professional, on-brand review responses in seconds. Track
+          sentiment and grow your reputation. Birdeye charges $299/mo for the
+          same AI capabilities. We start at $19/mo.
         </p>
         <div className="mt-10 flex items-center justify-center gap-4">
           <Button size="lg" asChild>
             <Link href="/signup">Start Free</Link>
           </Button>
           <Button size="lg" variant="outline" asChild>
-            <Link href="#pricing">View Pricing</Link>
+            <Link href="#comparison">See How We Compare</Link>
           </Button>
         </div>
         <p className="mt-4 text-sm text-muted-foreground">

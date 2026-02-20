@@ -11,6 +11,10 @@ import {
   Sparkles,
   RefreshCw,
   Trash2,
+  Briefcase,
+  Heart,
+  Coffee,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -50,6 +54,27 @@ const SOURCE_COLORS: Record<string, string> = {
   other: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
 };
 
+const TONE_CONFIG: Record<string, { label: string; icon: typeof Briefcase; color: string; border: string }> = {
+  professional: {
+    label: "Professional",
+    icon: Briefcase,
+    color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+    border: "border-blue-200 dark:border-blue-800",
+  },
+  friendly: {
+    label: "Friendly",
+    icon: Heart,
+    color: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200",
+    border: "border-pink-200 dark:border-pink-800",
+  },
+  casual: {
+    label: "Casual",
+    icon: Coffee,
+    color: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+    border: "border-amber-200 dark:border-amber-800",
+  },
+};
+
 function StarRating({
   rating,
   size = "md",
@@ -85,6 +110,8 @@ export default function ReviewDetailPage() {
   const [generating, setGenerating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedTone, setSelectedTone] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const fetchReview = useCallback(async () => {
     try {
@@ -118,7 +145,30 @@ export default function ReviewDetailPage() {
     fetchReview();
   }, [fetchReview]);
 
-  async function handleGenerateResponse() {
+  async function handleGenerateMultiTone() {
+    setGenerating(true);
+    try {
+      const res = await fetch(`/api/reviews/${id}/generate-response`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ multi_tone: true }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to generate responses");
+
+      toast.success("3 AI response options generated!");
+      setSelectedTone(null);
+      await fetchReview();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to generate responses",
+      );
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handleGenerateSingle() {
     setGenerating(true);
     try {
       const res = await fetch(`/api/reviews/${id}/generate-response`, {
@@ -128,7 +178,6 @@ export default function ReviewDetailPage() {
       if (!res.ok) throw new Error(json.error || "Failed to generate response");
 
       toast.success("AI response generated!");
-      // Refresh review to get the new response
       await fetchReview();
     } catch (err) {
       toast.error(
@@ -139,10 +188,12 @@ export default function ReviewDetailPage() {
     }
   }
 
-  async function handleCopyToClipboard(text: string) {
+  async function handleCopyToClipboard(text: string, responseId: string) {
     try {
       await navigator.clipboard.writeText(text);
+      setCopiedId(responseId);
       toast.success("Response copied to clipboard!");
+      setTimeout(() => setCopiedId(null), 2000);
     } catch {
       toast.error("Failed to copy to clipboard");
     }
@@ -222,10 +273,27 @@ export default function ReviewDetailPage() {
     );
   }
 
+  // Group latest responses by tone (get most recent set of 3)
+  const latestResponses = review.responses?.slice(0, 3) || [];
+  const hasMultiTone =
+    latestResponses.length >= 3 &&
+    new Set(latestResponses.map((r) => r.tone)).size >= 3;
+
+  // For multi-tone display, get unique tones from latest batch
+  const toneResponses = hasMultiTone
+    ? latestResponses
+    : [];
+
+  // Single latest response (legacy or when no multi-tone)
   const latestResponse =
-    review.responses && review.responses.length > 0
+    !hasMultiTone && review.responses && review.responses.length > 0
       ? review.responses[0]
       : null;
+
+  // Currently selected tone response
+  const activeToneResponse = selectedTone
+    ? toneResponses.find((r) => r.tone === selectedTone)
+    : toneResponses[0] || null;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -337,11 +405,139 @@ export default function ReviewDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Response section */}
+      {/* AI Response Section */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold">AI Response</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            AI Response
+            <Badge className="bg-purple-600 text-white text-[10px]">AI</Badge>
+          </h2>
+          {(hasMultiTone || latestResponse) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGenerateMultiTone}
+              disabled={generating}
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Regenerate 3 Options
+                </>
+              )}
+            </Button>
+          )}
+        </div>
 
-        {latestResponse ? (
+        {/* Multi-tone response cards */}
+        {hasMultiTone && (
+          <div className="space-y-3">
+            {/* Tone selector tabs */}
+            <div className="flex gap-2">
+              {toneResponses.map((r) => {
+                const config = TONE_CONFIG[r.tone || "professional"];
+                const ToneIcon = config?.icon || Briefcase;
+                const isActive = (selectedTone || toneResponses[0]?.tone) === r.tone;
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => setSelectedTone(r.tone || "professional")}
+                    className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-all ${
+                      isActive
+                        ? `${config?.border || ""} bg-muted shadow-sm`
+                        : "border-transparent hover:bg-muted/50"
+                    }`}
+                  >
+                    <ToneIcon className="h-4 w-4" />
+                    {config?.label || r.tone}
+                    {r.is_used && (
+                      <Badge variant="outline" className="ml-1 text-[10px] bg-green-50 text-green-700">
+                        Posted
+                      </Badge>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Active response */}
+            {activeToneResponse && (
+              <Card className={TONE_CONFIG[activeToneResponse.tone || "professional"]?.border || ""}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge className={TONE_CONFIG[activeToneResponse.tone || "professional"]?.color || ""}>
+                        {TONE_CONFIG[activeToneResponse.tone || "professional"]?.label || activeToneResponse.tone}
+                      </Badge>
+                      <CardDescription>
+                        Generated{" "}
+                        {new Date(activeToneResponse.created_at).toLocaleDateString(
+                          "en-US",
+                          { year: "numeric", month: "short", day: "numeric" },
+                        )}
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor={`posted-${activeToneResponse.id}`} className="text-xs text-muted-foreground">
+                        Posted
+                      </Label>
+                      <Switch
+                        id={`posted-${activeToneResponse.id}`}
+                        checked={activeToneResponse.is_used}
+                        onCheckedChange={() =>
+                          handleTogglePosted(
+                            activeToneResponse.id,
+                            activeToneResponse.is_used,
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                    {activeToneResponse.content}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handleCopyToClipboard(activeToneResponse.content, activeToneResponse.id)
+                      }
+                    >
+                      {copiedId === activeToneResponse.id ? (
+                        <>
+                          <Check className="mr-2 h-4 w-4 text-green-600" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Copy to Clipboard
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {review.responses.length > 3 && (
+              <p className="text-xs text-muted-foreground">
+                {review.responses.length} responses generated total (showing latest 3 tone options)
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Single response (legacy) */}
+        {!hasMultiTone && latestResponse && (
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -378,15 +574,24 @@ export default function ReviewDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleCopyToClipboard(latestResponse.content)}
+                  onClick={() => handleCopyToClipboard(latestResponse.content, latestResponse.id)}
                 >
-                  <Copy className="mr-2 h-4 w-4" />
-                  Copy to Clipboard
+                  {copiedId === latestResponse.id ? (
+                    <>
+                      <Check className="mr-2 h-4 w-4 text-green-600" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copy to Clipboard
+                    </>
+                  )}
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleGenerateResponse}
+                  onClick={handleGenerateSingle}
                   disabled={generating}
                 >
                   {generating ? (
@@ -410,32 +615,46 @@ export default function ReviewDetailPage() {
               )}
             </CardContent>
           </Card>
-        ) : (
-          <Card className="border-dashed">
+        )}
+
+        {/* Empty state - no responses yet */}
+        {!hasMultiTone && !latestResponse && (
+          <Card className="border-dashed border-purple-200 dark:border-purple-800">
             <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-              <Sparkles className="mb-3 h-8 w-8 text-muted-foreground" />
-              <h3 className="font-semibold">No response generated yet</h3>
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900">
+                <Sparkles className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <h3 className="font-semibold">Generate AI Response Options</h3>
               <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                Generate an AI-powered response to this review that matches your
-                business tone.
+                Generate 3 response options in different tones — professional,
+                friendly, and casual — then pick the one that fits best.
               </p>
-              <Button
-                className="mt-4"
-                onClick={handleGenerateResponse}
-                disabled={generating}
-              >
-                {generating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Generate AI Response
-                  </>
-                )}
-              </Button>
+              <div className="mt-4 flex gap-2">
+                <Button
+                  onClick={handleGenerateMultiTone}
+                  disabled={generating}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  {generating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating 3 Options...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate 3 Tone Options
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleGenerateSingle}
+                  disabled={generating}
+                >
+                  Single Response
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
