@@ -4,6 +4,7 @@ import { ReputationScore } from "@/components/dashboard/reputation-score";
 import { SentimentChart } from "@/components/dashboard/sentiment-chart";
 import { RecentReviews } from "@/components/dashboard/recent-reviews";
 import { calculateReputationScore } from "@/lib/reputation";
+import { CrossPromoBanner } from "@/components/dashboard/cross-promo-banner";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -126,6 +127,8 @@ export default async function DashboardPage() {
       </div>
 
       <RecentReviews reviews={recentFive} />
+
+      <CrossPromoBanner />
     </div>
   );
 }
